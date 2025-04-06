@@ -149,6 +149,7 @@
         (function() {
             // Initialize EmailJS with your public key
             emailjs.init("IMwIKjhh67B1_o9I9");
+            console.log('EmailJS initialized');
         })();
 
         // Initialize Firebase Auth state observer
@@ -207,15 +208,18 @@
             console.log('Sending OTP to:', userEmail); // Debug log
             const otp = generateOTP();
             
-            // Update template parameters to include your email as sender
+            // Update template parameters
             const templateParams = {
                 to_email: userEmail,
-                from_email: "miniproject25141@gmail.com", // Replace with your email
+                from_email: "miniproject25141@gmail.com",
                 user_email: userEmail,
-                otp: otp
+                otp: otp,
+                to_name: userEmail.split('@')[0] // Add recipient name
             };
 
-            // Send email using your EmailJS service
+            console.log('Template params:', templateParams); // Debug log
+
+            // Send email using EmailJS service
             emailjs.send('service_nk4zixs', 'template_vh13f8d', templateParams)
                 .then(function(response) {
                     console.log('SUCCESS!', response.status, response.text);
@@ -238,8 +242,8 @@
                     }, 1000);
                 })
                 .catch(function(error) {
-                    console.log('FAILED...', error);
-                    statusMessage.textContent = 'Failed to send OTP. Please try again.';
+                    console.error('EmailJS Error:', error);
+                    statusMessage.textContent = 'Failed to send OTP. Error: ' + error.message;
                     statusMessage.className = 'status-message error';
                     button.disabled = false;
                 });
