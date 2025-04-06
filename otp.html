@@ -146,9 +146,12 @@
     </div>
 
     <script>
-        // Initialize EmailJS
+        // Initialize EmailJS with your public key
         (function() {
-            emailjs.init("IMwIKjhh67B1_o9I9");
+            emailjs.init({
+                publicKey: "5GgOFke6DlrWL5_zr",
+            });
+            console.log('EmailJS initialized');
         })();
 
         function generateOTP() {
@@ -173,28 +176,32 @@
                 statusMessage.textContent = 'Sending OTP...';
                 statusMessage.className = 'status-message';
 
-                // Get email from URL parameters
-                const urlParams = new URLSearchParams(window.location.search);
-                const userEmail = urlParams.get('email');
-
-                if (!userEmail) {
-                    throw new Error('Email address not found in URL');
+                // Get current user from Firebase
+                const user = firebase.auth().currentUser;
+                if (!user || !user.email) {
+                    throw new Error('No authenticated user found');
                 }
+
+                const userEmail = user.email;
+                console.log('Current user email:', userEmail);
 
                 const otp = generateOTP();
                 console.log('Generated OTP:', otp);
 
-                // EmailJS template parameters
+                // Prepare template parameters
                 const templateParams = {
+                    to_name: userEmail.split('@')[0],
                     to_email: userEmail,
-                    user_name: userEmail.split('@')[0],
+                    from_name: "E-Authentication System",
                     otp: otp
                 };
 
+                console.log('Sending email with params:', templateParams);
+
                 // Send email using EmailJS
                 const response = await emailjs.send(
-                    'service_nk4zixs',  // Your EmailJS service ID
-                    'template_vh13f8d', // Your EmailJS template ID
+                    'service_zlqtm7c',
+                    'template_ddfs8pu',
                     templateParams
                 );
 
@@ -219,25 +226,30 @@
 
             } catch (error) {
                 console.error('Failed to send OTP:', error);
-                statusMessage.textContent = 'Failed to send OTP: ' + error.message;
+                let errorMessage = error.message || 'Unknown error occurred';
+                if (error.text) {
+                    errorMessage = error.text;
+                }
+                statusMessage.textContent = 'Failed to send OTP: ' + errorMessage;
                 statusMessage.className = 'status-message error';
                 button.disabled = false;
             }
         }
 
-        // Check URL parameters on load
+        // Check authentication state on load
         window.addEventListener('load', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const userEmail = urlParams.get('email');
-            
-            if (!userEmail) {
+            firebase.auth().onAuthStateChanged((user) => {
                 const statusMessage = document.getElementById('statusMessage');
-                statusMessage.textContent = 'Email parameter missing. Please try again.';
-                statusMessage.className = 'status-message error';
-                document.querySelector('.send-otp-btn').disabled = true;
-            } else {
-                console.log('Ready to send OTP to:', userEmail);
-            }
+                if (user) {
+                    console.log('User is authenticated:', user.email);
+                    document.querySelector('.send-otp-btn').disabled = false;
+                } else {
+                    console.log('No user is authenticated');
+                    statusMessage.textContent = 'Please login first to receive OTP.';
+                    statusMessage.className = 'status-message error';
+                    document.querySelector('.send-otp-btn').disabled = true;
+                }
+            });
         });
     </script>
 </body>
