@@ -148,12 +148,7 @@
     <script>
         // Initialize EmailJS
         (function() {
-            try {
-                emailjs.init("IMwIKjhh67B1_o9I9");
-                console.log('EmailJS initialized successfully');
-            } catch (error) {
-                console.error('EmailJS initialization failed:', error);
-            }
+            emailjs.init("IMwIKjhh67B1_o9I9");
         })();
 
         function generateOTP() {
@@ -178,43 +173,32 @@
                 statusMessage.textContent = 'Sending OTP...';
                 statusMessage.className = 'status-message';
 
-                // Try to get email from URL parameters first
+                // Get email from URL parameters
                 const urlParams = new URLSearchParams(window.location.search);
-                let userEmail = urlParams.get('email');
-
-                // If not in URL, try Firebase current user
-                if (!userEmail) {
-                    const currentUser = firebase.auth().currentUser;
-                    if (currentUser && currentUser.email) {
-                        userEmail = currentUser.email;
-                    }
-                }
-
-                // If still no email, try localStorage
-                if (!userEmail) {
-                    userEmail = localStorage.getItem('userEmail');
-                }
+                const userEmail = urlParams.get('email');
 
                 if (!userEmail) {
-                    throw new Error('No email address found');
+                    throw new Error('Email address not found in URL');
                 }
 
-                console.log('Sending OTP to:', userEmail);
                 const otp = generateOTP();
+                console.log('Generated OTP:', otp);
+
+                // EmailJS template parameters
+                const templateParams = {
+                    to_email: userEmail,
+                    user_name: userEmail.split('@')[0],
+                    otp: otp
+                };
 
                 // Send email using EmailJS
                 const response = await emailjs.send(
-                    'service_nk4zixs',
-                    'template_vh13f8d',
-                    {
-                        to_email: userEmail,
-                        user_name: userEmail.split('@')[0],
-                        otp: otp,
-                        from_name: 'E-Authentication System'
-                    }
+                    'service_nk4zixs',  // Your EmailJS service ID
+                    'template_vh13f8d', // Your EmailJS template ID
+                    templateParams
                 );
 
-                console.log('EmailJS Response:', response);
+                console.log('Email sent successfully:', response);
                 statusMessage.textContent = 'OTP sent successfully to ' + userEmail;
                 statusMessage.className = 'status-message success';
                 localStorage.setItem('currentOTP', otp);
@@ -235,38 +219,25 @@
 
             } catch (error) {
                 console.error('Failed to send OTP:', error);
-                statusMessage.textContent = 'Failed to send OTP: ' + (error.message || 'Unknown error');
+                statusMessage.textContent = 'Failed to send OTP: ' + error.message;
                 statusMessage.className = 'status-message error';
                 button.disabled = false;
             }
         }
 
-        // Check authentication state and email parameter on load
+        // Check URL parameters on load
         window.addEventListener('load', () => {
-            // Verify EmailJS is loaded
-            if (typeof emailjs === 'undefined') {
-                console.error('EmailJS is not loaded!');
-                return;
-            }
-            console.log('EmailJS is loaded and ready');
-
-            // Get email from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
-            const emailParam = urlParams.get('email');
-            if (emailParam) {
-                console.log('Email from URL:', emailParam);
-                localStorage.setItem('userEmail', emailParam);
-            }
-
-            firebase.auth().onAuthStateChanged((user) => {
+            const userEmail = urlParams.get('email');
+            
+            if (!userEmail) {
                 const statusMessage = document.getElementById('statusMessage');
-                if (!user && !emailParam) {
-                    statusMessage.textContent = 'Please login first to receive OTP.';
-                    statusMessage.className = 'status-message error';
-                } else {
-                    console.log('Ready to send OTP to:', emailParam || user.email);
-                }
-            });
+                statusMessage.textContent = 'Email parameter missing. Please try again.';
+                statusMessage.className = 'status-message error';
+                document.querySelector('.send-otp-btn').disabled = true;
+            } else {
+                console.log('Ready to send OTP to:', userEmail);
+            }
         });
     </script>
 </body>
