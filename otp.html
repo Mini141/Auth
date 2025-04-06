@@ -178,13 +178,27 @@
                 statusMessage.textContent = 'Sending OTP...';
                 statusMessage.className = 'status-message';
 
-                // Get current user
-                const currentUser = firebase.auth().currentUser;
-                if (!currentUser || !currentUser.email) {
-                    throw new Error('No authenticated user found');
+                // Try to get email from URL parameters first
+                const urlParams = new URLSearchParams(window.location.search);
+                let userEmail = urlParams.get('email');
+
+                // If not in URL, try Firebase current user
+                if (!userEmail) {
+                    const currentUser = firebase.auth().currentUser;
+                    if (currentUser && currentUser.email) {
+                        userEmail = currentUser.email;
+                    }
                 }
 
-                const userEmail = currentUser.email;
+                // If still no email, try localStorage
+                if (!userEmail) {
+                    userEmail = localStorage.getItem('userEmail');
+                }
+
+                if (!userEmail) {
+                    throw new Error('No email address found');
+                }
+
                 console.log('Sending OTP to:', userEmail);
                 const otp = generateOTP();
 
@@ -195,7 +209,8 @@
                     {
                         to_email: userEmail,
                         user_name: userEmail.split('@')[0],
-                        otp: otp
+                        otp: otp,
+                        from_name: 'E-Authentication System'
                     }
                 );
 
@@ -226,7 +241,7 @@
             }
         }
 
-        // Check authentication state on load
+        // Check authentication state and email parameter on load
         window.addEventListener('load', () => {
             // Verify EmailJS is loaded
             if (typeof emailjs === 'undefined') {
@@ -235,13 +250,21 @@
             }
             console.log('EmailJS is loaded and ready');
 
+            // Get email from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailParam = urlParams.get('email');
+            if (emailParam) {
+                console.log('Email from URL:', emailParam);
+                localStorage.setItem('userEmail', emailParam);
+            }
+
             firebase.auth().onAuthStateChanged((user) => {
                 const statusMessage = document.getElementById('statusMessage');
-                if (!user) {
+                if (!user && !emailParam) {
                     statusMessage.textContent = 'Please login first to receive OTP.';
                     statusMessage.className = 'status-message error';
                 } else {
-                    console.log('User authenticated:', user.email);
+                    console.log('Ready to send OTP to:', emailParam || user.email);
                 }
             });
         });

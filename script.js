@@ -104,7 +104,8 @@ function showQRCode(email) {
     localStorage.setItem('userEmail', email);
     
     // Generate QR code with email parameter
-    const baseUrl = window.location.origin;
+    const currentUrl = window.location.href;
+    const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
     const otpUrl = `${baseUrl}/otp.html?email=${encodeURIComponent(email)}`;
     
     // Create QR code with better visibility
@@ -117,7 +118,7 @@ function showQRCode(email) {
         correctLevel: QRCode.CorrectLevel.H
     });
     
-    console.log('Generated QR URL:', otpUrl); // For debugging
+    console.log('Generated QR URL:', otpUrl);
     
     // Add instructions for scanning
     const qrInstructions = document.createElement('p');
