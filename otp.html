@@ -149,7 +149,7 @@
         // Initialize EmailJS with your public key
         (function() {
             emailjs.init("5GgOFke6DlrWL5_zr");
-            console.log('EmailJS initialized');
+            console.log('EmailJS initialized with public key');
         })();
 
         function generateOTP() {
@@ -186,21 +186,17 @@
                 const otp = generateOTP();
                 console.log('Generated OTP:', otp);
 
-                // Prepare template parameters
-                const templateParams = {
-                    to_name: userEmail.split('@')[0],
-                    to_email: userEmail,
-                    from_name: "Mini",
-                    otp: otp
-                };
-
-                console.log('Sending email with params:', templateParams);
-
                 // Send email using EmailJS
                 const response = await emailjs.send(
                     'service_zlqtm7c',
-                    'template_ddfs8pu',
-                    templateParams
+                    'template_vh13f8d',
+                    {
+                        to_name: userEmail.split('@')[0],
+                        to_email: userEmail,
+                        from_name: 'E-Authentication System',
+                        otp: otp,
+                        message: `Your OTP is: ${otp}`
+                    }
                 );
 
                 console.log('Email sent successfully:', response);
