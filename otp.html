@@ -147,8 +147,20 @@
 
     <script>
         (function() {
+            // Initialize EmailJS with your public key
             emailjs.init("IMwIKjhh67B1_o9I9");
         })();
+
+        // Initialize Firebase Auth state observer
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                console.log('User is signed in:', user.email);
+                localStorage.setItem('userEmail', user.email);
+            } else {
+                console.log('No user is signed in');
+                localStorage.removeItem('userEmail');
+            }
+        });
 
         function generateOTP() {
             return Math.floor(100000 + Math.random() * 900000).toString();
@@ -171,25 +183,39 @@
             statusMessage.textContent = 'Sending OTP...';
             statusMessage.className = 'status-message';
 
-            // Get current user from Firebase
-            const currentUser = firebase.auth().currentUser;
+            // Try to get email from multiple sources
+            let userEmail = null;
             
-            if (!currentUser) {
-                statusMessage.textContent = 'Please login first to receive OTP.';
+            // First try Firebase current user
+            const currentUser = firebase.auth().currentUser;
+            if (currentUser && currentUser.email) {
+                userEmail = currentUser.email;
+            }
+            
+            // If not found, try localStorage
+            if (!userEmail) {
+                userEmail = localStorage.getItem('userEmail');
+            }
+            
+            if (!userEmail) {
+                statusMessage.textContent = 'No authenticated user found. Please login again.';
                 statusMessage.className = 'status-message error';
                 button.disabled = false;
                 return;
             }
 
-            const userEmail = currentUser.email;
+            console.log('Sending OTP to:', userEmail); // Debug log
             const otp = generateOTP();
             
+            // Update template parameters to include your email as sender
             const templateParams = {
                 to_email: userEmail,
+                from_email: "miniproject25141@gmail.com", // Replace with your email
                 user_email: userEmail,
                 otp: otp
             };
 
+            // Send email using your EmailJS service
             emailjs.send('service_nk4zixs', 'template_vh13f8d', templateParams)
                 .then(function(response) {
                     console.log('SUCCESS!', response.status, response.text);
@@ -221,13 +247,14 @@
 
         // Check authentication state on load
         window.addEventListener('load', () => {
-            firebase.auth().onAuthStateChanged((user) => {
-                if (!user) {
-                    const statusMessage = document.getElementById('statusMessage');
-                    statusMessage.textContent = 'Please login first to receive OTP.';
-                    statusMessage.className = 'status-message error';
-                }
-            });
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) {
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.textContent = 'Please login first to receive OTP.';
+                statusMessage.className = 'status-message error';
+            } else {
+                console.log('Current user email:', currentUser.email); // Debug log
+            }
         });
     </script>
 </body>

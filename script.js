@@ -62,9 +62,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const password = document.getElementById('loginPassword').value;
 
     try {
-        await firebase.auth().signInWithEmailAndPassword(email, password);
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        console.log('User logged in:', userCredential.user.email);
+        localStorage.setItem('userEmail', email);
         showQRCode(email);
     } catch (error) {
+        console.error('Login Error:', error);
         alert('Login Error: ' + error.message);
     }
 });
@@ -77,12 +80,15 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
     const name = document.getElementById('signupName').value;
 
     try {
-        await firebase.auth().createUserWithEmailAndPassword(email, password);
-        await firebase.auth().currentUser.updateProfile({
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        console.log('User signed up:', userCredential.user.email);
+        await userCredential.user.updateProfile({
             displayName: name
         });
+        localStorage.setItem('userEmail', email);
         showQRCode(email);
     } catch (error) {
+        console.error('Signup Error:', error);
         alert('Signup Error: ' + error.message);
     }
 });
